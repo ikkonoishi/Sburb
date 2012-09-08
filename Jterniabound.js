@@ -108,7 +108,7 @@ Sburb.initialize = function(div,levelName,includeDevTools){
 						>\
 						ERROR: Your browser is too old to display this content!\
 			</canvas>\
-			<canvas id="SBURBMapCanvas" width="1" height="1" style="display:none"/> \
+			<canvas id="SBURBMapCanvas" width="1" height="1" style="display:none"></canvas> \
 		</div>\
 		<div id="SBURBmovieBin" style="position: absolute; z-index:200"> </div>\
 		<div id="SBURBfontBin"></div>\
