@@ -66,10 +66,11 @@
 <action name='startGame' command='playMovie'>
 	<args>startMovie,fusciaRuler, 32.0830</args>
 </action>
--->
+
 <action name='startGame' command='playSong'>
 	<args>fusciaRuler, 32.0830</args>
 </action>
+-->
 
 <hud>
   	<spritebutton name='volumeButton' x='9' y='9' width='54' height='36' sheet='volumeControl'>

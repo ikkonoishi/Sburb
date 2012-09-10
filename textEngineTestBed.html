@@ -5,19 +5,46 @@
 		<title>Bluh</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<!-- imports -->
+		<script type="text/javascript">Sburb=new Object();</script>
+		<!--
+		<script type="text/javascript" src="base32k.min.js"></script>
+		<script type="text/javascript" src="modernizr.js"></script>
+		<script type="text/javascript" src="Jterniabound.js"></script>
 		
-		<script type="text/javascript">
-			var Sburb=new Object();
-		</script>
+		<script type="text/javascript" src="Sprite.js"></script>
+		<script type="text/javascript" src="Fighter.js"></script>
+		<script type="text/javascript" src="Character.js"></script> 
+		<script type="text/javascript" src="SpriteButton.js"></script>
 		
+		<script type="text/javascript" src="Animation.js"></script>
+		<script type="text/javascript" src="Room.js"></script>
+		<script type="text/javascript" src="FontEngine.js"></script>
+		<script type="text/javascript" src="Action.js"></script>
+		<script type="text/javascript" src="events.js"></script>
+		<script type="text/javascript" src="Trigger.js"></script>
+		<script type="text/javascript" src="commands.js"></script>
+		<script type="text/javascript" src="serialization.js"></script>
+		<script type="text/javascript" src="Dialoger.js"></script>
+		<script type="text/javascript" src="Chooser.js"></script>
+		<script type="text/javascript" src="Audio.js"></script>
+		<script type="text/javascript" src="Assets.js"></script>
+		<script type="text/javascript" src="Path.js"></script>
+		-->
 		<script type="text/javascript" src="TextEngine.js"></script>
 
 		<script type="text/javascript">
-			var tparser =new Sburb.TextParser();
+			var tEngine = new Sburb.TextEngine("multi");
+			
+			function doIt () {
+				Sburb.stage = document.getElementById("Stage").getContext("2d");
+			  	tEngine.setText(document.getElementById('testtext').value);
+			  	tEngine.draw();
+			}
 		</script>
 	</head>
 	
 	<body>
+		<div id="JterniaDeploy" ></div>
 		<textarea id="testtext" rows="20" style="width:100%">			
 		@meenah_talk MEENAH: vantas gimme your password
       @karkat_what KARKAT: (huh?)
@@ -50,7 +77,8 @@
       @meenah_creepytalk MEENAH: you will not regret hitchin your wagon to my starfish
       @karkat_facepalm KARKAT: 
 		</textarea>
-		<input type="button" onclick="tparser.parseFull(document.getElementById('testtext').value);" />
+		<input type="button" onclick="doIt();" />
+		<canvas height="350" width="500" id="Stage"></canvas>
 		<noscript>Your browser does not appear to support javascript, which this content requires</noscript>
 	</body>
 </html>

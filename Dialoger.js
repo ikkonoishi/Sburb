@@ -385,7 +385,6 @@ Sburb.Dialoger.prototype.update = function(){
 			this.hashes.showSubText(0,0);
 		}
 	}
-	
 	this.box.update();
 }
 

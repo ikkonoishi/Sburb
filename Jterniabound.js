@@ -215,7 +215,8 @@ function draw(){
 		Sburb.stage.translate(-Sburb.Stage.x,-Sburb.Stage.y);
 	
 		Sburb.chooser.draw();
-	
+		
+		
 		Sburb.stage.restore();
 		Sburb.Stage.offset = false;
 	}
