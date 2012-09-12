@@ -35,8 +35,9 @@
 		<script type="text/javascript">
 			var tEngine = new Sburb.TextEngine("multi");
 			
-			function doIt () {
+			function doIt (parsing) {
 				Sburb.stage = document.getElementById("Stage").getContext("2d");
+				tEngine.setParsing(parsing);
 			  	tEngine.setText(document.getElementById('testtext').value);
 			  	tEngine.draw();
 			}
@@ -45,40 +46,44 @@
 	
 	<body>
 		<div id="JterniaDeploy" ></div>
-		<textarea id="testtext" rows="20" style="width:100%">			
-		@meenah_talk MEENAH: vantas gimme your password
-      @karkat_what KARKAT: (huh?)
-      @meenah_talk MEENAH: this is your door aint it
-      @karkat_talk KARKAT: (what makes you say that.)
-      @meenah_annoyedtalk MEENAH: the symbol on the doors the same as on your fuckin shirt
-      @meenah_annoyedtalk:#pchooo MEENAH: come on it aint blastoff device science
-      @karkat_sullen KARKAT: (ok, yeah, it's mine. maybe i got tired of interloping shitbags traipsing through my PRIVATE and PERSONAL memories.)
-      @meenah_talk MEENAH: you dont need to whisper anymore aint no one around
-      @karkat_idle KARKAT: OH
-      @meenah_happytalk MEENAH: now whats the password
-      @karkat_talk KARKAT: MOVE OVER, I'LL TYPE IT FOR YOU.
-      @meenah_angrytalk MEENAH: no just tell me shouty!!! 
-      @karkat_shout KARKAT: OH MY GOD, THAT IS SO UNREASONABLE. HOW IS IT NOT PRETTY MUCH THE MOST REASONABLE FUCKING THING IN THE WORLD TO LET ME JUST TYPE MY OWN PASSWORD???
-      @meenah_fish MEENAH: dude you want kankri to find you and talk yer nubs off again
-      @karkat_horror:#OH-DEAR-GOD KARKAT: NO!!! ANYTHING BUT THAT.
-      @karkat_yell KARKAT: ALRIGHT, I'LL TELL YOU, JUST...
-      @karkat_yell KARKAT: DON'T GO BLABBING IT AROUND.
-      @karkat_talk KARKAT: THE PASSWORD IS...
-      @karkat_eyeroll1~dialogimg_karkat1  
-      @meenah_idle:#? MEENAH: wuh
-      @karkat_eyeroll2~dialogimg_karkat1 
-      @meenah_wut2 MEENAH: bro you gotta speak up
-      @karkat_shout:#WHAT-ARE-YOU-DEAF KARKAT: IF I HATE MYSELF SO MUCH, THEN WHY DON'T I HATEMARRY MYSELF!!!!!!!
-      @meenah_wut MEENAH: T)(ATS your p word
-      @meenah_annoyedtalk MEENAH: what in glubs name does that mean
-      @karkat_yell KARKAT: NOTHING. IT'S NONE OF YOUR BUSINESS.
-      @karkat_sullen KARKAT: IT'S JUST SOMETHING THAT REMINDS ME OF AN OLD FRIEND. ALRIGHT?! CAN WE GET GOING NOW?
-      @meenah_happier MEENAH: fuck yeah! this way shouty
-      @meenah_creepytalk MEENAH: you will not regret hitchin your wagon to my starfish
-      @karkat_facepalm KARKAT: 
+		<textarea id="testtext" rows="20" style="width:50%">			
+@meenah_talk MEENAH: vantas gimme your password
+@karkat_what KARKAT: (huh?)
+@meenah_talk MEENAH: this is your door aint it
+@karkat_talk KARKAT: (what makes you say that.)
+@meenah_annoyedtalk MEENAH: the symbol on the doors the same as on your fuckin shirt
+@meenah_annoyedtalk:#pchooo MEENAH: come on it aint blastoff device science
+@karkat_sullen KARKAT: (ok, yeah, it's mine. maybe i got tired of interloping shitbags traipsing through my PRIVATE and PERSONAL memories.)
+@meenah_talk MEENAH: you dont need to whisper anymore aint no one around
+@karkat_idle KARKAT: OH
+@meenah_happytalk MEENAH: now whats the password
+@karkat_talk KARKAT: MOVE OVER, I'LL TYPE IT FOR YOU.
+@meenah_angrytalk MEENAH: no just tell me shouty!!! 
+@karkat_shout KARKAT: OH MY GOD, THAT IS SO UNREASONABLE. HOW IS IT NOT PRETTY MUCH THE MOST REASONABLE FUCKING THING IN THE WORLD TO LET ME JUST TYPE MY OWN PASSWORD???
+@meenah_fish MEENAH: dude you want kankri to find you and talk yer nubs off again
+@karkat_horror:#OH-DEAR-GOD KARKAT: NO!!! ANYTHING BUT THAT.
+@karkat_yell KARKAT: ALRIGHT, I'LL TELL YOU, JUST...
+@karkat_yell KARKAT: DON'T GO BLABBING IT AROUND.
+@karkat_talk KARKAT: THE PASSWORD IS...
+@karkat_eyeroll1~dialogimg_karkat1  
+@meenah_idle:#? MEENAH: wuh
+@karkat_eyeroll2~dialogimg_karkat1 
+@meenah_wut2 MEENAH: bro you gotta speak up
+@karkat_shout:#WHAT-ARE-YOU-DEAF KARKAT: IF I HATE MYSELF SO MUCH, THEN WHY DON'T I HATEMARRY MYSELF!!!!!!!
+@meenah_wut MEENAH: T)(ATS your p word
+@meenah_annoyedtalk MEENAH: what in glubs name does that mean
+@karkat_yell KARKAT: NOTHING. IT'S NONE OF YOUR BUSINESS.
+@karkat_sullen KARKAT: IT'S JUST SOMETHING THAT REMINDS ME OF AN OLD FRIEND. ALRIGHT?! CAN WE GET GOING NOW?
+@meenah_happier MEENAH: fuck yeah! this way shouty
+@meenah_creepytalk MEENAH: you will not regret hitchin your wagon to my starfish
+@karkat_facepalm KARKAT: 
 		</textarea>
-		<input type="button" onclick="doIt();" />
-		<canvas height="350" width="500" id="Stage"></canvas>
+		<canvas height="350" width="500" id="Stage">d</canvas>
+		<br />
+		<input type="button" onclick="doIt(this.value);" value="none" />
+		<input type="button" onclick="doIt(this.value);" value="single" />
+		<input type="button" onclick="doIt(this.value);" value="multi" />
+		
 		<noscript>Your browser does not appear to support javascript, which this content requires</noscript>
 	</body>
 </html>

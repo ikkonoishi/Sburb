@@ -184,25 +184,41 @@ Sburb.TextEngine.prototype.formattingMarks = {
 			 	}
 			 	return info;
 		 },
-		render: function(context,style,text,position){
+		render: function(context,style,text,boxinfo){
 			if(Sburb.stage.lineWidth!=0.6){
 					Sburb.stage.lineWidth = 0.6;
 			}
 			if(Sburb.stage.lineCap!="square"){
 				Sburb.stage.lineCap = "square";
 			}
-			Sburb.stage.beginPath();
+			
 			//canvas tags are weird about lines.
 			//they draw them much better if you stradle pixels. 
 			//So I offset this by half a pixel vertically
-			Sburb.stage.moveTo(position.x,position.y+0.5);
-			Sburb.stage.lineTo(position.x+context.measureText(text).width,position.y+0.5);
-			Sburb.stage.closePath();
-			Sburb.stage.stroke();
+			var reg = /[^\s]+[\s]?/g;
+			var word = reg.exec(text);
+			var x = boxinfo.x,y=boxinfo.y;
+			//word up holmes
+			while(word)
+			{
+
+				if (Sburb.stage.measureText(word[0]).width+x>=boxinfo.maxX)
+				{
+					x = 0;
+					y += boxinfo.lineheight;
+				}
+				Sburb.stage.beginPath();
+				Sburb.stage.moveTo(x,y+0.5);
+				Sburb.stage.lineTo(x+context.measureText(word[0]).width,y+0.5);
+				Sburb.stage.closePath();
+				Sburb.stage.stroke();
+				x+=Sburb.stage.measureText(word[0]).width;
+				var word = reg.exec(text);
+			}
 		}
 			 	
 	},
-	color: {
+	color	: {
 		match: function (text) {
 			  	var regex = new RegExp("/0x((?:#[a-fA-F0-9]{6})?)/","g");
 			  	var info = new Array();
@@ -226,19 +242,27 @@ Sburb.TextEngine.prototype.formattingMarks = {
 			 	return info;
 
 		 },
-		render: function(context,style,text,position){
+		render: function(context,style,text,boxinfo){
 			Sburb.stage.strokeStyle = Sburb.stage.fillStyle = style;
 			return false; //dont skip future rendering
 		}
 			 	
 	},
 	isformat : {
-		match: function(){},
-		render: function(context,style,text,position)
+		match: function(text){},
+		render: function(context,style,text,boxinfo)
 		{
-			return style;
+			return style; //If this text is formatting return true to prevent it being rendered.
 		}
 		
+	},
+	font 	: {
+		match: function (text) {},
+		render: function (context,style,text,boxinfo)
+		{
+			context.font = style;
+			return false;
+		}
 	}
 	
 	
@@ -260,7 +284,7 @@ Sburb.TextParser = function(){
 	this.backgrounds = null;
 	this.extras = null;
 	this.styles = null;
-	this.defaultStyles = {};
+	this.defaultStyles = new Sburb.TextStyleToken(-1,{font: "bold 14px SburbFont",color: "#000000"});
 }
 
 Sburb.TextEngine.prototype.PARSER_DEFAULT = Sburb.TextParser;
@@ -288,89 +312,130 @@ Sburb.TextParser.ACTOR_COLORS = {
 
 //////////////ABSTRACT METHODS////////////////////////////////
 
-//Text should come back as-is, still apply default styles
-//Ikko Assumption {
-//      If you aren't processing batches then each line is it's own batch.
-//      I'm assuming that batching them combines lines that have the same actor and animation
-// }
-Sburb.TextParser.prototype.parseNone = function(text){
+Sburb.TextParser.prototype.parseNone = function(text) {
+	this.parseBatches(text,true);
+	this.parseStyles(true)
+}
+
+Sburb.TextParser.prototype.parseNoBatch = function(text) {
+	this.parseBatches(text,true);
+	this.parseStyles(false)
+}
+
+Sburb.TextParser.prototype.parseFull = function(text) {
+	this.parseBatches(text,false);
+	this.parseStyles(false)
+}
+
+Sburb.TextParser.prototype.parseBatches = function(text,nobatch){
 	this.batches = new Array()
 	this.actors = new Array();
 	this.animations = new Array();
 	this.backgrounds = new Array();
 	this.extras = new Array();
 	
-	this.boxes = new Array();//Ikko Question: Where should I get this information?
+	this.boxes = new Array();
 	this.styles = new Array();
-	this.defaultStyles = {font: "bold 14px SburbFont",color: "#000000"}; 
+	 
 	
     var lines = new Array();
-    //master Index for all arrays
-    var mI = 0;
+    
     var splittext = text.split("\n");
+    if (nobatch)
+    {
+    	this.batches=splittext;
+    	this.actors = new Array(splittext.length);
+		this.animations = new Array(splittext.length);
+		this.backgrounds = new Array(splittext.length);
+		this.extras = new Array(splittext.length);
+		
+		this.boxes = new Array(splittext.length);
+		return;
+    }
     for (var i = 0;i<splittext.length;i++)
     {
         var line = splittext[i].match(/(@[^:\s]+)(:[^\s]*)?\s([^\n]*)/);
-        if (!line)continue;
+        if (!line)
+        {
+        	continue;
+        }
         var extra = line[2]?line[2]:"";
-        var metadata = line[1].match(/([@_~%][^@_~%]+)/g);
-        var actor = "@!";
-        var animation = "";
-        var background = "";
+        var metadata = line[1].match(/([@_~%])([^@_~%]+)/g);
+        var actor = null;
+        var animation = null;
+        var background = null;
+        var box = null;
         //Metadata types can be determined by the first character
         // @ = actor
         // _ = animation
         // ~ = textbox image
-        // % = background image
+        // % = background image (box)
         // : = extra info/hashtags (must be last)
         // We might want to add a metadata type for not parsing for formatting 
         // so people don't have to do a lot of underscore escaping
         while (metadata.length > 0)
         {
             var mdItem = metadata.pop();
-			if (mdItem.substr(0,1) == "@")
-				actor = mdItem;
-			if (mdItem.substr(0,1) == "_")
-				animation = mdItem;
-			if (mdItem.substr(0,1) == "~")
-				background = mdItem;
+			if (mdItem[0] == "@")
+				actor 		= mdItem;
+			if (mdItem[0] == "_")
+				animation 	= mdItem;
+			if (mdItem[0] == "~")
+				background 	= mdItem;
+			if (mdItem[0] == "%")
+				box 		= mdItem;
         }
-        //If there isn't an animation fall back to the @CGIdle method
-        if (animation == ""&& actor != "@!")
+        //If there isn't an "_" deliminated animation fall back to the @CGIdle method
+        if (animation == ""&& !actor)
         {
-        	animation = "_" + actor.substr(2,actor.length-2);
+        	animation = actor.substr(2,actor.length-2);
         	actor = actor.substr(0,2);
         }
         this.batches.push(line[3]?line[3]:"");
         this.actors.push(actor);
         this.animations.push(animation);
         this.backgrounds.push(background);
+        this.boxes.push(box);
     }
 }
-//Text should come back with styles applied, but nothing to do with batches
-Sburb.TextParser.prototype.parseNoBatch = function(text){
+
+
+
+Sburb.TextParser.prototype.parseStyles = function(onlydefault){
 	//process the base text
-	this.parseNone(text);
 	this.styles = new Array();
 	for (var i=0;i<this.batches.length;i++)
 	{
+
+		this.styles[i] = new Array();
+		this.styles[i].push(this.defaultStyles.clone(0));
+		
+		//If we are only setting the default style then skip the rest.		
+		if (onlydefault) continue;
+		
+		if (this.actors[i])
+			this.styles[i][0].styles.color = Sburb.TextParser.ACTOR_COLORS[this.actors[i].substr(1,this.actors[i].length-1)];
+
 		//this is an intermediary style. It will be sorted and parsed to the actual style.
 		var batchStyle = new Array();
+		var fMarks = Sburb.TextEngine.prototype.formattingMarks;
 		
-		batchStyle = batchStyle.concat(Sburb.TextEngine.prototype.formattingMarks.underline.match(this.batches[i]));
-		batchStyle = batchStyle.concat(Sburb.TextEngine.prototype.formattingMarks.color.match(this.batches[i]));
+		for (var fmark in fMarks)
+		{
+			//Have each formatting mark find its tags
+			var returnedStyle=fMarks[fmark].match(this.batches[i]);
+			if (typeof returnedStyle == "object")
+				batchStyle = batchStyle.concat(returnedStyle);
+		}
 		
 		batchStyle.sort(function(a,b){return a.start-b.start});
-		this.styles[i] = new Array();
-		this.styles[i].push(new Sburb.TextStyleToken(0,{}));
-		var actorcolor = Sburb.TextParser.ACTOR_COLORS[this.actors[i].substr(1,this.actors[i].length-1)]
-		this.styles[i][0].styles.color = actorcolor?actorcolor:this.defaultStyles.color;
-		this.styles[i][0].styles.font = this.defaultStyles.font;
+		
 		var curStyle = batchStyle.shift();
 		while (curStyle)
 		{
 			var found = -1;
-			for (var j=0;j<this.styles[i].length&&this.styles[i][j].index<=curStyle.start;j++)
+			var j;
+			for (j=0;j<this.styles[i].length&&this.styles[i][j].index<=curStyle.start;j++)
 			{
 				if (this.styles[i][j].index==curStyle.start)
 				{
@@ -380,11 +445,7 @@ Sburb.TextParser.prototype.parseNoBatch = function(text){
 			}
 			if (found<0)
 			{
-				found = this.styles[i].push(new Sburb.TextStyleToken(curStyle.start,{}))-1;
-				for (var s in this.styles[i][found-1].styles)
-				{
-					this.styles[i][found].styles[s] = this.styles[i][found-1].styles[s];
-				} 
+				found = this.styles[i].push(this.styles[i][j-1].clone(curStyle.start))-1;
 			}
 			if ('toggle' in curStyle)
 			{
@@ -395,6 +456,7 @@ Sburb.TextParser.prototype.parseNoBatch = function(text){
 			}
 			if ('value' in curStyle)
 			{
+				//if the value tag was added, but is false or empty use the default style 
 				if (curStyle.type in this.styles[i][0].styles&&!curStyle.value) curStyle.value = this.styles[i][0].styles[curStyle.type];
 				this.styles[i][found].styles[curStyle.type] = curStyle.value;
 			}
@@ -404,12 +466,7 @@ Sburb.TextParser.prototype.parseNoBatch = function(text){
 		
 	}
 }
-//Text should come back with styles applied, and batching applied
-Sburb.TextParser.prototype.parseFull = function(text){
-	//first process the formatting and base text
-	this.parseNoBatch(text);
-		
-}
+
 
 
 /////////////NON-ABSTRACT METHODS/////////////////////////////
@@ -448,7 +505,12 @@ Sburb.TextStyleToken = function(index, styles){
 	this.styles = styles; //map of styleNames to values (e.g. {font:"Courier", color:"#00ff00", italic:"false"})
 }
 
-
+Sburb.TextStyleToken.prototype.clone = function(newindex) {
+	var ret = new Sburb.TextStyleToken(newindex!=null?newindex:this.index,{});
+	for (var style in this.styles)
+		ret.styles[style] = this.styles[style];
+	return ret;
+}
 
 
 
@@ -502,9 +564,9 @@ Sburb.TextRenderer.prototype.nextBatch = function(){}
 
 //draw the text
 Sburb.TextRenderer.prototype.draw = function(){
-	var position={x:0,y:50,maxX:400,maxY:400};
+	var boxinfo={x:0,y:10,maxX:400,maxY:400,lineheight:10};
 	Sburb.stage.fillStyle="#FFFFFF";
-	Sburb.stage.fillRect(0,0,1150,1175);//whatever get everything just debug code
+	Sburb.stage.fillRect(0,0,1150,1175);
 	for (var batch = 0;batch<this.batches.length;batch++)
 	{
 		
@@ -523,7 +585,7 @@ Sburb.TextRenderer.prototype.draw = function(){
 			{
 				if (priority[formater] in this.styles[batch][i].styles)
 				{
-					noDrawText=noDrawText || Sburb.TextEngine.prototype.formattingMarks[priority[formater]].render(Sburb.stage,this.styles[batch][i].styles[priority[formater]],text,position);
+					noDrawText=noDrawText || Sburb.TextEngine.prototype.formattingMarks[priority[formater]].render(Sburb.stage,this.styles[batch][i].styles[priority[formater]],text,boxinfo);
 				}
 			}
 			if (!noDrawText)
@@ -533,19 +595,19 @@ Sburb.TextRenderer.prototype.draw = function(){
 					//word up holmes
 					while(word)
 					{
-						if (Sburb.stage.measureText(word[0]).width+position.x>=position.maxX)
+						if (Sburb.stage.measureText(word[0]).width+boxinfo.x>=boxinfo.maxX)
 						{
-							position.x = 0;
-							position.y += 10;
+							boxinfo.x = 0;
+							boxinfo.y += 10;
 						}
-						Sburb.stage.fillText(word[0],position.x,position.y,Sburb.stage.measureText(word[0]).width);
-						position.x+=Sburb.stage.measureText(word[0]).width;
+						Sburb.stage.fillText(word[0],boxinfo.x,boxinfo.y,Sburb.stage.measureText(word[0]).width);
+						boxinfo.x+=Sburb.stage.measureText(word[0]).width;
 						var word = reg.exec(text);
 					}	
 				}
 		}
-		position.y+=10;
-		position.x=0;
+		boxinfo.y+=boxinfo.lineheight;
+		boxinfo.x=0;
 	}	
 }
 
